@@ -1,28 +1,54 @@
-package main.scala.de.simtext
+package de.simtext
 
-import java.io.File
-import java.nio.file.{Paths, Files}
+import de.simtext.domain.CompareTuple
+import scala.collection.mutable
+import scala.concurrent.Future
+import scala.io.Source
+import scala.concurrent.ExecutionContext.Implicits.global
 
 object SimText extends App {
+  val sliding_step = 3
 
-  def printUsage() = println("Usage: run [Folder2/File1] [Folder2/File2] [outputfile]")
-  def printNoFiles() = println(s"The arguments(${args.toList}) entered are no valid files.")
+  val file1 = Source.fromFile(args(0))
+  val text1 = try file1.mkString finally file1.close()
 
-  if (args.length < 2) printUsage()
-  else {
-    if(args.forall(str => Files.exists(Paths.get(str)))) {
-      val files: List[File] = args.toList.flatMap { fileString =>
-        val path = Paths.get(fileString)
-        if (Files.isDirectory(path)) {
-          path.toFile.listFiles().toList
-        } else {
-          List(path.toFile)
-        }
+  val file2 = Source.fromFile(args(1))
+  val text2 = try file2.mkString finally file1.close()
+
+  val tokenizer = new Tokenizer()
+  val compare = CompareTuple(text1, text2, tokenizer)
+
+  val percentages = compareTokenLists(compare.tokens1, compare.tokens2)
+
+  percentages.map(println)
+
+
+  def compareTokenLists(tokens1: List[String], tokens2: List[String]): Future[Double] = {
+    getEqualPercentage(tokens1, tokens2)
+  }
+
+  private def getEqualPercentage(tokens1: List[String], tokens2: List[String]): Future[Double] = {
+    Future {
+      var matches = new mutable.HashMap[String, Boolean]
+
+      val indices = compare.tokens1.sliding(sliding_step).zipWithIndex.map {
+        case (slice, matchStartingIndex) =>
+          if (matches.getOrElse(slice.toString(), false)) matchStartingIndex
+          else {
+            if (compare.tokens2.indexOfSlice(slice) == -1) -1
+            else {
+              matches += (slice.toString -> true)
+              matchStartingIndex
+            }
+          }
+      }.filter(_ != -1)
+
+      val sum = indices.sliding(2).foldLeft(sliding_step) {
+        case (acc, a :: b :: rest) => if ((b - a) < sliding_step) acc + (b - a) else acc + sliding_step
+        case (acc, _) => acc
       }
 
-      println(files)
-    } else {
-      printNoFiles()
+      sum * 100.0 / tokens1.length
     }
   }
 }
