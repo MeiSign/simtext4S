@@ -6,23 +6,27 @@ import org.apache.spark.{SparkConf, SparkContext}
 
 import scala.collection.SortedMap
 import scala.collection.immutable.HashMap
+import com.typesafe.config.{Config, ConfigFactory}
 
 object SimText {
+
+  val conf = ConfigFactory.load()
+  val partitionsCount = conf.getInt("simtext.partitions")
+  val minMatchLength = conf.getInt("simtext.minmatchlength")
+  val hdfsDir1 = conf.getString("simtext.hdfs.dir1")
+  val hdfsDir2 = conf.getString("simtext.hdfs.dir2")
+  val outputDir = conf.getString("simtext.hdfs.output")
 
   def main(args: Array[String]): Unit = {
     val conf = new SparkConf().setAppName("simtext4s with Spark")
     val sc = new SparkContext(conf)
 
-    val minMatchLength = 3
-    val tokenzier = new Tokenizer()
+    val tokenizer = new Tokenizer()
 
-    val tokenizedFiles: RDD[(String, List[String])] = sc
-      .wholeTextFiles("hdfs://hadoop03.f4.htw-berlin.de:8020/studenten/s0531927/Muenster-Med/", 300)
-      .map {
-        case (name, text) => (name, tokenzier.tokenize(text))
-      }
+    val tokenizedFiles1 = getTokenizedFilesAsRdd(sc, tokenizer, hdfsDir1)
+    val tokenizedFiles2 = getTokenizedFilesAsRdd(sc, tokenizer, hdfsDir2)
 
-    val comparetuples = tokenizedFiles.cartesian(tokenizedFiles).map {
+    val comparetuples = tokenizedFiles1.cartesian(tokenizedFiles2).map {
       case ((name1, tokens1), (name2, tokens2)) =>
         CompareTuple(TokenizedText(name1, tokens1), TokenizedText(name2, tokens2))
     }
@@ -33,9 +37,15 @@ object SimText {
       CompareResult(compareTuple.tokenizedText1.name, compareTuple.tokenizedText2.name, similarity)
     }
 
-    results.saveAsTextFile("hdfs://hadoop03.f4.htw-berlin.de:8020/studenten/s0531927/samples/result")
+    results.saveAsTextFile(outputDir)
 
     sc.stop()
+  }
+
+  private def getTokenizedFilesAsRdd(sc: SparkContext, tokenizer: Tokenizer, path: String) = {
+    sc.wholeTextFiles(path, partitionsCount).map {
+        case (name, text) => (name, tokenizer.tokenize(text))
+      }
   }
 
   private def buildForwardReferenceTable(tokens: List[String], minMatchLength: Int): SortedMap[Int, Int] = {
