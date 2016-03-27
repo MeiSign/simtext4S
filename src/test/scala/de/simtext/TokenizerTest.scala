@@ -13,7 +13,7 @@ class TokenizerTest extends Specification {
         ignoreLetterCase = true,
         ignoreNumbers = false,
         ignorePunctuation = false,
-        replaceUmlauts = false
+        ignoreUmlauts = false
       )
 
       tokenizer.stringCleanup("Test 123. Gross- und Kleinbuchstaben") mustEqual "test 123. gross- und kleinbuchstaben"
@@ -24,7 +24,7 @@ class TokenizerTest extends Specification {
         ignoreLetterCase = false,
         ignoreNumbers = false,
         ignorePunctuation = true,
-        replaceUmlauts = false
+        ignoreUmlauts = false
       )
 
       tokenizer.stringCleanup("Bla'blubb, blub. Test 123. aber 12.02 und 123.04565!") mustEqual "Bla blubb  blub  Test 123  aber 12 02 und 123 04565 "
@@ -35,7 +35,7 @@ class TokenizerTest extends Specification {
         ignoreLetterCase = false,
         ignoreNumbers = true,
         ignorePunctuation = false,
-        replaceUmlauts = false
+        ignoreUmlauts = false
       )
 
       tokenizer.stringCleanup("Test 123. aber 12.02 und 123.04565!") mustEqual "Test . aber . und .!"
@@ -46,7 +46,7 @@ class TokenizerTest extends Specification {
         ignoreLetterCase = false,
         ignoreNumbers = false,
         ignorePunctuation = false,
-        replaceUmlauts = true
+        ignoreUmlauts = true
       )
 
       tokenizer.stringCleanup("äöüßæœÄÖÜÆŒ") mustEqual "aeoeuessaeoeAEOEUEAEOE"
@@ -59,7 +59,7 @@ class TokenizerTest extends Specification {
         ignoreLetterCase = true,
         ignoreNumbers = false,
         ignorePunctuation = true,
-        replaceUmlauts = true
+        ignoreUmlauts = true
       )
 
       tokenizer.tokenize(text) mustEqual List("es", "ist", "einfach", "nicht", "genehmigte", "kabellose", "hardware", "in", "ein", "unternehmen", "einzuschmuggeln", "kabellose", "zugriffspunkte", "sind", "ziemlich", "billig", "und", "einfach", "aufzustellen", "beispielsweise", "kann", "ein", "beraterteam", "das", "in", "einem", "konferenzraum", "arbeitet", "ohne", "jeden", "boesen", "hintergedanken", "einen", "kabellosen", "zugriffspunkt", "installieren", "damit", "alle", "teammitglieder", "die", "einzige", "netzwerkbuchse", "im", "raum", "gemeinsam", "verwenden", "koennen", "ein", "hacker", "der", "boeses", "im", "schilde", "fuehrt", "kann", "sich", "mit", "seinem", "laptop", "mit", "wlan", "karte", "in", "eine", "cafeteria", "setzen", "und", "nach", "unverschluesseltem", "oder", "wep", "verschluesseltem", "datenverkehr", "suchen", "in", "beiden", "faellen", "entstehen", "untragbare", "risiken", "unabhaengig", "davon", "ob", "eine", "boese", "absicht", "vorliegt", "kann", "das", "einbringen", "nicht", "genehmigter", "hardware", "den", "datenschutz", "und", "die", "netzwerkintegritaet", "zunichte", "machen", "moeglichkeiten", "um", "nicht", "genehmigte", "kabellose", "geraete", "zu", "erkennen", "sind", "das", "physische", "untersuchen", "der", "installationen", "systematische", "suche", "nach", "wlan", "technik", "oder", "war", "driving", "die", "verwendung", "von", "funkfrequenz", "scangeraeten", "zur", "bestimmung", "der", "standorte", "von", "kabellosen", "geraeten", "sowie", "die", "verwendung", "von", "systemen", "die", "den", "netzwerkverkehr", "nach", "nicht", "autorisierten", "geraeten", "absuchen")

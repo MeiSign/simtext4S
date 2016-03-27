@@ -2,7 +2,11 @@ package de.simtext
 
 import java.util.Locale
 
-class Tokenizer(ignoreLetterCase: Boolean = true, ignoreNumbers: Boolean = false, ignorePunctuation: Boolean = true, replaceUmlauts: Boolean = true) extends Serializable {
+class Tokenizer(
+                 ignoreLetterCase: Boolean = true,
+                 ignoreNumbers: Boolean = false,
+                 ignorePunctuation: Boolean = true,
+                 ignoreUmlauts: Boolean = true) extends Serializable {
 
   implicit class StringCleanUtils(s: String) {
     private val removePunctuationPattern = """[\p{Punct}]""".r
@@ -18,7 +22,7 @@ class Tokenizer(ignoreLetterCase: Boolean = true, ignoreNumbers: Boolean = false
     def removeNumbers(): String = if (ignoreNumbers) anyDigit.replaceAllIn(s, "") else s
 
     def transformUmlauts(): String = {
-      if (replaceUmlauts) {
+      if (ignoreUmlauts) {
         s
           .replaceAll("ä", "ae")
           .replaceAll("ö", "oe")

@@ -13,16 +13,16 @@ object SimText {
   // initializing config from resources/application.conf
   val conf = ConfigFactory.load()
   val partitionsCount = conf.getInt("simtext.partitions")
-  val outputPartitions = conf.getInt("simtext.output.partitions")
   val minMatchLength = conf.getInt("simtext.minmatchlength")
   val hdfsDir1 = conf.getString("simtext.hdfs.dir1")
   val hdfsDir2 = conf.getString("simtext.hdfs.dir2")
-  val outputDir = conf.getString("simtext.hdfs.output")
+  val outputDir = conf.getString("simtext.hdfs.output.dir")
+  val outputPartitions = conf.getInt("simtext.hdfs.output.partitions")
   // initializing tokenizer options
-  val ignoreLetterCase = conf.getBoolean("simtext.tokenizer.ingore.letter.case")
+  val ignoreLetterCase = conf.getBoolean("simtext.tokenizer.ignore.lettercase")
   val ignoreNumbers = conf.getBoolean("simtext.tokenizer.ignore.numbers")
   val ignorePunctuation = conf.getBoolean("simtext.tokenizer.ignore.punctuation")
-  val replaceUmlauts = conf.getBoolean("simtext.tokenizer.replace.umlauts")
+  val ignoreUmlauts = conf.getBoolean("simtext.tokenizer.ignore.umlauts")
 
   /**
     * the main method runs the spark job and gets called by the spark system
@@ -42,7 +42,7 @@ object SimText {
       ignoreLetterCase = ignoreLetterCase,
       ignoreNumbers = ignoreNumbers,
       ignorePunctuation = ignorePunctuation,
-      replaceUmlauts = replaceUmlauts
+      ignoreUmlauts = ignoreUmlauts
     )
 
     val tokenizedFiles1 = getTokenizedFilesAsRdd(sc, tokenizer, hdfsDir1)

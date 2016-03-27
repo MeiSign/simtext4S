@@ -2,8 +2,6 @@
   # Number of partitions in which the textfile RDD is splitted.
   # Sparks advise is to choose 2-4 partitions per cpu in your cluster
   "partitions": 420,
-  # Number of result files which are written in the hdfs
-  "output.partitions": 30,
   # Minimum length of a tokensequence to be counted as a duplicate
   "minmatchlength": 3,
   # hdfs filepaths
@@ -13,17 +11,23 @@
     # if you only want to compare files in one directory choose dir1 and dir2 identically
     "dir1": "hdfs://...",
     "dir2": "hdfs://...",
-    # outputdirectory in hdfs to write the results
-    "output": "hdfs://..."
+    "output": {
+      # outputdirectory in hdfs to write the results
+      "dir": "hdfs://hadoop03.f4.htw-berlin.de:8020/studenten/s0531927/samples/result/",
+      # Number of result files which are written in the hdfs
+      "partitions": 30,
+    }
   },
   "tokenizer" {
-    # If true all text tokens get lowercase before comparison
-    "ignore.letter.case": true,
-    # If true all numbers get removed before comparison
-    "ignore.numbers": false,
-    # If true punctuation get removed before comparison
-    "ignore.punctuation": true,
-    # If true umlauts are replaced by normal letters i.e. ü => ue
-    "replace.umlauts": true
+    "ignore": {
+      # If true all text tokens get lowercase before comparison
+      "lettercase": true,
+      # If true all numbers get removed before comparison
+      "numbers": false,
+      # If true punctuation get removed before comparison
+      "punctuation": true,
+      # If true umlauts are replaced by normal letters i.e. ü => ue
+      "umlauts": true
+    }
   }
 }
