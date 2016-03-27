@@ -1,7 +1,7 @@
 "simtext" {
   # Number of partitions in which the textfile RDD is splitted.
   # Sparks advise is to choose 2-4 Partitions per cpu in your cluster
-  "partitions": 300,
+  "partitions": 400,
   # Minimum length of a tokensequence to be counted as a duplicate
   "minmatchlength": 3,
   # hdfs filepaths
