@@ -85,21 +85,21 @@ object SimText {
     * @param minMatchLength minimum length of tokensequence to count as duplicate
     * @return forward reference table of type SortedMap[Int, Int]
     */
-  def buildForwardReferenceTable(tokens: List[String], minMatchLength: Int): SortedMap[Int, Int] = {
-    val (_, forwardRefTable) = tokens
-      .sliding(minMatchLength)
-      .zipWithIndex
-      .foldLeft(HashMap.empty[List[String], Int], SortedMap.empty[Int, Int]) {
-        case ((lastIndexAcc, forwardRefTableAcc), (slice, index: Int)) =>
-        if (lastIndexAcc.contains(slice)) {
-          val updatedForwardRefTable = forwardRefTableAcc + (lastIndexAcc.get(slice).get -> index)
-          val updatedLastIndexAcc = lastIndexAcc + (slice -> index)
-          (updatedLastIndexAcc, updatedForwardRefTable)
-        } else {
-          val updatedLastIndexAcc = lastIndexAcc + (slice -> index)
-          (updatedLastIndexAcc, forwardRefTableAcc)
-        }
-    }
+  def buildForwardReferenceTable(tokens: List[String], minMatchLength: Int) = {
+    val tokSequences = tokens.sliding(minMatchLength)
+    val zippedTokenSeq = tokSequences.zipWithIndex
+    val (_, forwardRefTable) = zippedTokenSeq
+      .foldLeft(HashMap[List[String], Int](), SortedMap[Int, Int]()) {
+        case ((lastIdxAcc, fwdRefTableAcc), (slice, index: Int)) =>
+          if (lastIdxAcc.contains(slice)) {
+            val updatedForwardRefTable = fwdRefTableAcc + (lastIdxAcc.get(slice).get -> index)
+            val updatedLastIndexAcc = lastIdxAcc + (slice -> index)
+            (updatedLastIndexAcc, updatedForwardRefTable)
+          } else {
+            val updatedLastIndexAcc = lastIdxAcc + (slice -> index)
+            (updatedLastIndexAcc, fwdRefTableAcc)
+          }
+      }
 
     forwardRefTable
   }
