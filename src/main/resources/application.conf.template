@@ -1,7 +1,9 @@
 "simtext" {
   # Number of partitions in which the textfile RDD is splitted.
-  # Sparks advise is to choose 2-4 Partitions per cpu in your cluster
-  "partitions": 400,
+  # Sparks advise is to choose 2-4 partitions per cpu in your cluster
+  "partitions": 420,
+  # Number of result files which are written in the hdfs
+  "output.partitions": 30,
   # Minimum length of a tokensequence to be counted as a duplicate
   "minmatchlength": 3,
   # hdfs filepaths
@@ -13,5 +15,15 @@
     "dir2": "hdfs://...",
     # outputdirectory in hdfs to write the results
     "output": "hdfs://..."
+  },
+  "tokenizer" {
+    # If true all text tokens get lowercase before comparison
+    "ignore.letter.case": true,
+    # If true all numbers get removed before comparison
+    "ignore.numbers": false,
+    # If true punctuation get removed before comparison
+    "ignore.punctuation": true,
+    # If true umlauts are replaced by normal letters i.e. ü => ue
+    "replace.umlauts": true
   }
 }

@@ -13,10 +13,16 @@ object SimText {
   // initializing config from resources/application.conf
   val conf = ConfigFactory.load()
   val partitionsCount = conf.getInt("simtext.partitions")
+  val outputPartitions = conf.getInt("simtext.output.partitions")
   val minMatchLength = conf.getInt("simtext.minmatchlength")
   val hdfsDir1 = conf.getString("simtext.hdfs.dir1")
   val hdfsDir2 = conf.getString("simtext.hdfs.dir2")
   val outputDir = conf.getString("simtext.hdfs.output")
+  // initializing tokenizer options
+  val ignoreLetterCase = conf.getBoolean("simtext.tokenizer.ingore.letter.case")
+  val ignoreNumbers = conf.getBoolean("simtext.tokenizer.ignore.numbers")
+  val ignorePunctuation = conf.getBoolean("simtext.tokenizer.ignore.punctuation")
+  val replaceUmlauts = conf.getBoolean("simtext.tokenizer.replace.umlauts")
 
   /**
     * the main method runs the spark job and gets called by the spark system
@@ -32,7 +38,12 @@ object SimText {
     val conf = new SparkConf().setAppName("simtext4s with Spark")
     val sc = new SparkContext(conf)
 
-    val tokenizer = new Tokenizer()
+    val tokenizer = new Tokenizer(
+      ignoreLetterCase = ignoreLetterCase,
+      ignoreNumbers = ignoreNumbers,
+      ignorePunctuation = ignorePunctuation,
+      replaceUmlauts = replaceUmlauts
+    )
 
     val tokenizedFiles1 = getTokenizedFilesAsRdd(sc, tokenizer, hdfsDir1)
     val tokenizedFiles2 = getTokenizedFilesAsRdd(sc, tokenizer, hdfsDir2)
@@ -55,7 +66,7 @@ object SimText {
       CompareResult(compareTuple.tokenizedText1.name, compareTuple.tokenizedText2.name, similarity)
     }
 
-    results.saveAsTextFile(outputDir)
+    results.coalesce(outputPartitions, true).saveAsTextFile(outputDir)
 
     sc.stop()
   }
