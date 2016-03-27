@@ -2,7 +2,7 @@ package de.simtext
 
 import java.util.Locale
 
-class Tokenizer(ignoreLetterCase: Boolean = true, ignoreNumbers: Boolean = false, ignorePunctuation: Boolean = true, replaceUmlauts: Boolean = true) {
+class Tokenizer(ignoreLetterCase: Boolean = true, ignoreNumbers: Boolean = false, ignorePunctuation: Boolean = true, replaceUmlauts: Boolean = true) extends Serializable {
 
   implicit class StringCleanUtils(s: String) {
     private val removePunctuationPattern = """[\p{Punct}]""".r
@@ -35,7 +35,7 @@ class Tokenizer(ignoreLetterCase: Boolean = true, ignoreNumbers: Boolean = false
     }
   }
 
-  def stringCleanup(text: String): String = {
+  val stringCleanup = (text: String) => {
     text
       .setCaseSensitivity()
       .removePunctuation()
@@ -44,9 +44,9 @@ class Tokenizer(ignoreLetterCase: Boolean = true, ignoreNumbers: Boolean = false
       .removeNonWordCharacters()
   }
 
-  def tokenize(text: String): List[String] = {
-    val cleanString = stringCleanup(text)
-
-    cleanString.split(" +").toList
+  val tokenize: (String) => List[String] = (text: String) => {
+    stringCleanup(text)
+      .split(" +")
+      .toList
   }
 }

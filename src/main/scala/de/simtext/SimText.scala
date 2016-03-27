@@ -1,53 +1,81 @@
 package de.simtext
 
-import java.io.File
+import de.simtext.domain.{CompareResult, CompareTuple, TokenizedText}
+import org.apache.spark.rdd.RDD
+import org.apache.spark.{SparkConf, SparkContext}
 
-import com.typesafe.scalalogging.Logger
-import de.simtext.domain.{CompareResult, CompareTuple}
-import org.slf4j.LoggerFactory
+import scala.collection.SortedMap
+import scala.collection.immutable.HashMap
 
-object SimText extends App {
-  val logger = Logger(LoggerFactory.getLogger("name"))
-  val sliding_step = 3
+object SimText {
 
-  val folder = new File(args(0))
-  require(folder.isDirectory, s"${folder.getAbsolutePath} must be a directory")
+  def main(args: Array[String]): Unit = {
+    val conf = new SparkConf().setAppName("simtext4s with Spark")
+    val sc = new SparkContext(conf)
 
-  val files = recursiveListFiles(folder)
-  val tokenizer = new Tokenizer()
+    val minMatchLength = 3
+    val tokenzier = new Tokenizer()
 
-  files.foreach { file1 =>
-    files.toList.foreach { file2 =>
-      val compareTuple = CompareTuple(file1, file2, tokenizer, sliding_step)
-      val compareResult = compareTokenLists(compareTuple)
-      logger.info(s"${compareResult.name1} and ${compareResult.name2} similarity is: ${compareResult.similarity}")
-    }
-  }
-
-  def compareTokenLists(compareTuple: CompareTuple): CompareResult = {
-      val indices: List[Int] = compareTuple.forwardReferenceTable.map {
-        case (key, value) =>
-          if (key < compareTuple.tokens1.length && matchInTarget(key, compareTuple.tokens1.length, compareTuple.forwardReferenceTable)) key
-          else -1
-      }.toList.filter(_ != -1).sorted
-
-      val sum = indices.sliding(2).foldLeft(sliding_step) {
-        case (acc, a :: b :: rest) => if ((b - a) < sliding_step) acc + (b - a) else acc + sliding_step
-        case (acc, _) => acc
+    val tokenizedFiles: RDD[(String, List[String])] = sc
+      .wholeTextFiles("hdfs://hadoop03.f4.htw-berlin.de:8020/studenten/s0531927/Muenster-Med/", 300)
+      .map {
+        case (name, text) => (name, tokenzier.tokenize(text))
       }
 
-      CompareResult(compareTuple.file1.getName, compareTuple.file2.getName, sum * 100.0 / compareTuple.tokens1.length)
+    val comparetuples = tokenizedFiles.cartesian(tokenizedFiles).map {
+      case ((name1, tokens1), (name2, tokens2)) =>
+        CompareTuple(TokenizedText(name1, tokens1), TokenizedText(name2, tokens2))
+    }
+
+    val results = comparetuples.map { compareTuple =>
+      val forwardRefTable: SortedMap[Int, Int] = buildForwardReferenceTable(compareTuple.combinedTokens, minMatchLength)
+      val similarity = compareTokenLists(compareTuple.splitIndex, forwardRefTable, minMatchLength)
+      CompareResult(compareTuple.tokenizedText1.name, compareTuple.tokenizedText2.name, similarity)
+    }
+
+    results.saveAsTextFile("hdfs://hadoop03.f4.htw-berlin.de:8020/studenten/s0531927/samples/result")
+
+    sc.stop()
   }
 
-  private def matchInTarget(key: Int, targetStart: Int, forwardReferenceTable: Map[Int, Int]): Boolean = {
+  private def buildForwardReferenceTable(tokens: List[String], minMatchLength: Int): SortedMap[Int, Int] = {
+    val (_, forwardRefTable) = tokens
+      .sliding(minMatchLength)
+      .zipWithIndex
+      .foldLeft(HashMap.empty[List[String], Int], SortedMap.empty[Int, Int]) {
+        case ((lastIndexAcc, forwardRefTableAcc), (slice, index: Int)) =>
+        if (lastIndexAcc.contains(slice)) {
+          val updatedForwardRefTable = forwardRefTableAcc + (lastIndexAcc.get(slice).get -> index)
+          val updatedLastIndexAcc = lastIndexAcc + (slice -> index)
+          (updatedLastIndexAcc, updatedForwardRefTable)
+        } else {
+          val updatedLastIndexAcc = lastIndexAcc + (slice -> index)
+          (updatedLastIndexAcc, forwardRefTableAcc)
+        }
+    }
+
+    forwardRefTable
+  }
+
+  def compareTokenLists(splitIndex: Int, forwardRefTable: SortedMap[Int, Int], minMatchLength: Int): Double = {
+    val indices: List[Int] = forwardRefTable.map {
+      case (key, value) =>
+        if (key < splitIndex && matchInTarget(key, splitIndex, forwardRefTable)) key
+        else -1
+    }.toList.filter(_ != -1)
+
+    val sum = indices.sliding(2).foldLeft(minMatchLength) {
+      case (acc, a :: b :: rest) => if ((b - a) < minMatchLength) acc + (b - a) else acc + minMatchLength
+      case (acc, _) => acc
+    }
+
+    sum * 100.0 / splitIndex
+  }
+
+  private def matchInTarget(key: Int, targetStart: Int, forwardReferenceTable: SortedMap[Int, Int]): Boolean = {
     forwardReferenceTable.get(key).fold(false){ value =>
       if (value >= targetStart) true
       else matchInTarget(value, targetStart, forwardReferenceTable)
     }
-  }
-
-  def recursiveListFiles(f: File): Array[File] = {
-    val these = f.listFiles
-    these ++ these.filter(_.isDirectory).flatMap(recursiveListFiles)
   }
 }

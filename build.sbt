@@ -1,12 +1,11 @@
-name := "simtext4S"
+name := "simtext4S with spark"
 
 version := "1.0"
 
-scalaVersion := "2.11.8"
+scalaVersion := "2.10.5"
 
 libraryDependencies ++= Seq(
-  "com.typesafe.scala-logging" %% "scala-logging" % "3.1.0",
-  "org.slf4j" % "slf4j-simple" % "1.7.19",
+  "org.apache.spark" %% "spark-core" % "1.6.1",
   "org.specs2" %% "specs2-core" % "3.7.2" % "test"
 )
 
