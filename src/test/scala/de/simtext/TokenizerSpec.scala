@@ -2,10 +2,7 @@ package de.simtext
 
 import org.specs2.mutable.Specification
 
-/**
-  * Created by Stefan on 21.03.2016.
-  */
-class TokenizerTest extends Specification {
+class TokenizerSpec extends Specification {
   "Tokenizer" should {
 
     "lower case text correctly" in {

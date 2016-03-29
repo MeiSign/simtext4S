@@ -23,11 +23,11 @@
   },
   "tokenizer" {
     "ignore": {
-      # If true all text tokens get lowercase before comparison
+      # If true all text tokens are lowercased before comparison
       "lettercase": true,
-      # If true all numbers get removed before comparison
+      # If true all numbers are removed before comparison
       "numbers": false,
-      # If true punctuation get removed before comparison
+      # If true punctuation is removed before comparison
       "punctuation": true,
       # If true umlauts are replaced by normal letters i.e. ü => ue
       "umlauts": true
