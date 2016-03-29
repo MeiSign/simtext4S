@@ -14,6 +14,7 @@ object SimText {
   val conf = ConfigFactory.load()
   val partitionsCount = conf.getInt("simtext.partitions")
   val minMatchLength = conf.getInt("simtext.minmatchlength")
+  val simThreshhold = conf.getInt("simtext.similaritythreshhold")
   val hdfsDir1 = conf.getString("simtext.hdfs.dir1")
   val hdfsDir2 = conf.getString("simtext.hdfs.dir2")
   val outputDir = conf.getString("simtext.hdfs.output.dir")
@@ -30,7 +31,7 @@ object SimText {
     * of them to create compare tuples.
     * afterwards it generates a forward reference table for each tuple and compares
     * the textfiles with each other.
-    * the results gets written into hdfs.
+    * the results are written into hdfs.
     *
     * @param args additional spark parameters which are passed by the spark system
     */
@@ -64,9 +65,9 @@ object SimText {
         minMatchLength
       )
       CompareResult(compareTuple.tokenizedText1.name, compareTuple.tokenizedText2.name, similarity)
-    }
+    }.filter(res => res.similarity >= simThreshhold)
 
-    results.coalesce(outputPartitions, true).saveAsTextFile(outputDir)
+    results.coalesce(outputPartitions, shuffle = true).saveAsTextFile(outputDir)
 
     sc.stop()
   }
@@ -140,12 +141,12 @@ object SimText {
   }
 
   /**
-    * recursive method to see if a tokensequence matches in both texts
+    * recursive method to see if a tokensequence is present in both texts
     *
     * @param key tokensequence to look for
     * @param targetStart offset index
     * @param forwardReferenceTable forwardreference table
-    * @return True if the tokensequence matches in both texts
+    * @return True if the tokensequence is present in both texts
     */
   private def matchInTarget(key: Int, targetStart: Int, forwardReferenceTable: SortedMap[Int, Int]): Boolean = {
     forwardReferenceTable.get(key).fold(false){ value =>

@@ -4,6 +4,9 @@
   "partitions": 420,
   # Minimum length of a tokensequence to be counted as a duplicate
   "minmatchlength": 3,
+  # Number from 1 to 100 that determines the similarity threshhold
+  # compareresults with a similarity smaller then the threshhold get discarded
+  "similaritythreshhold": 1,
   # hdfs filepaths
   "hdfs" {
     # files in dir1 get compared with dir2
