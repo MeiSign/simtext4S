@@ -7,6 +7,7 @@ import org.apache.spark.{SparkConf, SparkContext}
 
 import scala.collection.SortedMap
 import scala.collection.immutable.HashMap
+import scala.reflect.io.Path
 
 object SimText {
 
@@ -15,10 +16,12 @@ object SimText {
   val partitionsCount = conf.getInt("simtext.partitions")
   val minMatchLength = conf.getInt("simtext.minmatchlength")
   val simThreshhold = conf.getInt("simtext.similaritythreshhold")
+  val truncateResults = conf.getBoolean("simtext.truncateresults")
   val hdfsDir1 = conf.getString("simtext.hdfs.dir1")
   val hdfsDir2 = conf.getString("simtext.hdfs.dir2")
   val outputDir = conf.getString("simtext.hdfs.output.dir")
   val outputPartitions = conf.getInt("simtext.hdfs.output.partitions")
+  val outputFilenamesOnly = conf.getBoolean("simtext.hdfs.output.filenamesonly")
   // initializing tokenizer options
   val ignoreLetterCase = conf.getBoolean("simtext.tokenizer.ignore.lettercase")
   val ignoreNumbers = conf.getBoolean("simtext.tokenizer.ignore.numbers")
@@ -49,9 +52,12 @@ object SimText {
     val tokenizedFiles1 = getTokenizedFilesAsRdd(sc, tokenizer, hdfsDir1)
     val tokenizedFiles2 = getTokenizedFilesAsRdd(sc, tokenizer, hdfsDir2)
 
-    val comparetuples: RDD[CompareTuple] = tokenizedFiles1.cartesian(tokenizedFiles2).map {
+    val comparetuples: RDD[CompareTuple] = tokenizedFiles1.cartesian(tokenizedFiles2).flatMap {
       case ((name1, tokens1), (name2, tokens2)) =>
-        CompareTuple(TokenizedText(name1, tokens1), TokenizedText(name2, tokens2))
+        if (name1 != name2)
+          Some(CompareTuple(TokenizedText(name1, tokens1), TokenizedText(name2, tokens2)))
+        else
+          None
     }
 
     val results: RDD[CompareResult] = comparetuples.map { compareTuple =>
@@ -72,6 +78,8 @@ object SimText {
     sc.stop()
   }
 
+  def extractFilename(path: String): String = path.split("/").takeRight(1)(0)
+
   /**
     * Loads files from hdfs as key value pairs (name, text) and
     * tokenizes the text with the provided tokenizer
@@ -83,7 +91,11 @@ object SimText {
     */
   private def getTokenizedFilesAsRdd(sc: SparkContext, tokenizer: Tokenizer, path: String) = {
     sc.wholeTextFiles(path, partitionsCount).map {
-        case (name, text) => (name, tokenizer.tokenize(text))
+        case (name, text) =>
+          if (outputFilenamesOnly)
+            (extractFilename(name), tokenizer.tokenize(text))
+          else
+            (name, tokenizer.tokenize(text))
       }
   }
 
@@ -137,7 +149,10 @@ object SimText {
       case (acc, _) => acc
     }
 
-    sum * 100.0 / splitIndex
+    if (truncateResults)
+      (sum * 100.0 / splitIndex).toInt
+    else
+      sum * 100.0 / splitIndex
   }
 
   /**

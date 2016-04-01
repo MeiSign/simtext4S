@@ -8,6 +8,8 @@
   # compareresults with a similarity smaller then the threshhold get discarded
   "similaritythreshhold": 1,
   # hdfs filepaths
+  # truncate result percentages to integer values
+  "truncateresults": true,
   "hdfs" {
     # files in dir1 get compared with dir2
     # you can also choose a single file as path
@@ -18,7 +20,9 @@
       # outputdirectory in hdfs to write the results
       "dir": "hdfs://hadoop03.f4.htw-berlin.de:8020/studenten/s0531927/samples/result/",
       # Number of result files which are written in the hdfs
-      "partitions": 30,
+      "partitions": 1,
+      # output filenames instead of full paths
+      "filenamesonly": true
     }
   },
   "tokenizer" {
